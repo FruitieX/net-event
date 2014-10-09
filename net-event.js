@@ -50,7 +50,7 @@ var netEvent = function(usrOptions) {
 
     // default to no tls
     var netType = net;
-    if (tls)
+    if (options.tls)
         netType = tls;
 
     var self = this;
