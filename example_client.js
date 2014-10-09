@@ -27,11 +27,11 @@ var options = {
 
 var socket = new netEvent(options);
 
-socket.on('helloTest2', function(data) {
+socket.on('helloResponse', function(data) {
     console.log('got JSON data: ' + JSON.stringify(data));
 });
 socket.on('open', function() {
-    socket.send('helloTest1', {
+    socket.send('helloTest', {
         'text': 'Hello world!'
     });
 });

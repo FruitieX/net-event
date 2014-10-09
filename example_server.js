@@ -32,9 +32,9 @@ var options = {
 var server = new netEvent(options);
 
 server.on('open', function(socket) {
-    socket.on('helloTest1', function(data) {
+    socket.on('helloTest', function(data) {
         console.log('got JSON data: ' + JSON.stringify(data));
-        socket.send('helloTest2', {
+        socket.send('helloResponse', {
             'text': 'Hello there!'
         });
     });
