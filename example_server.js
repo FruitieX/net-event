@@ -38,4 +38,7 @@ server.on('open', function(socket) {
             'text': 'Hello there!'
         });
     });
+    socket.on('end', function() {
+        console.log('client disconnected');
+    });
 });

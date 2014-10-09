@@ -35,3 +35,6 @@ socket.on('open', function() {
         'text': 'Hello world!'
     });
 });
+socket.on('end', function() {
+    console.log('Connection to server lost');
+});

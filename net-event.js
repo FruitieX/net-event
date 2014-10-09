@@ -129,6 +129,7 @@ var netEvent = function(usrOptions) {
             };
 
             socket.once('close', function() {
+                self.emit('end');
                 reconnect('(connection closed)');
             });
             socket.once('error', function(e) {
