@@ -18,6 +18,6 @@ Note that unlike in the examples, your code should `require('net-event')`
 Protocol
 --------
 
-msg_len["eventname",JSON]
+`msg_len["eventname",JSON]`
 
-Example: 37["helloTest",{"text":"Hello world!"}]
+Example: `37["helloTest",{"text":"Hello world!"}]`
