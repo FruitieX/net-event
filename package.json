@@ -1,0 +1,25 @@
+{
+  "name": "net-event",
+  "version": "0.0.1",
+  "description": "easily extend node net/tls modules with events",
+  "main": "net-event.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FruitieX/net-event.git"
+  },
+  "keywords": [
+    "nodifier",
+    "tls",
+    "socket",
+    "networking"
+  ],
+  "author": "FruitieX",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FruitieX/net-event/issues"
+  },
+  "homepage": "https://github.com/FruitieX/net-event"
+}
