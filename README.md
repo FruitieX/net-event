@@ -14,3 +14,10 @@ Examples can be tested by running:
 * node example_client.js
 
 Note that unlike in the examples, your code should `require('net-event')`
+
+Protocol
+--------
+
+msg_len["eventname",JSON]
+
+Example: 37["helloTest",{"text":"Hello world!"}]
