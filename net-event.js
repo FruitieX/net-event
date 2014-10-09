@@ -133,6 +133,7 @@ var netEvent = function(usrOptions) {
                 reconnect('(connection closed)');
             });
             socket.once('error', function(e) {
+                self.emit('error', e);
                 reconnect(e);
             });
 

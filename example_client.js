@@ -38,3 +38,6 @@ socket.on('open', function() {
 socket.on('end', function() {
     console.log('Connection to server lost');
 });
+socket.on('error', function(e) {
+    console.log('Socket error: ' + e);
+});
