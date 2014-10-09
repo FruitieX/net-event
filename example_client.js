@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // example client program
-var netEvent = require('./net-event');
+var netEvent = require('net-event');
 var fs = require('fs');
 
 var options = {
