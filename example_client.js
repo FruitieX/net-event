@@ -29,6 +29,10 @@ var socket = new netEvent(options);
 
 socket.on('helloResponse', function(data) {
     console.log('got JSON data: ' + JSON.stringify(data));
+    setTimeout(function() {
+        console.log('closing connection gracefully');
+        socket.close();
+    }, 3000);
 });
 socket.on('open', function() {
     socket.send('helloTest', {
