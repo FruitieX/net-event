@@ -103,9 +103,20 @@ var netEvent = function(usrOptions) {
     // client specific code
     else {
         var socket;
+        var reconnectTimer;
 
         var connect = function(callback) {
+            log('connecting...');
+
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(connect, options.retryReconnectTimer);
+
+            if(socket)
+                socket.destroy();
+
             socket = netType.connect(options.port, options.host, options, function() {
+                clearTimeout(reconnectTimer);
+
                 socket._buf = "";
                 log('connected');
 
@@ -119,11 +130,10 @@ var netEvent = function(usrOptions) {
                 self.emit('open');
             });
 
-            var reconnectTimer;
             var reconnect = function(e) {
                 if(!e)
                     e = '';
-                log('reconnecting... ' + e);
+                log('reconnecting in ' + options.retryReconnectTimer + 'ms... ' + e);
                 clearTimeout(reconnectTimer);
                 reconnectTimer = setTimeout(connect, options.retryReconnectTimer);
             };
