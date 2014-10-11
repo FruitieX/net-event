@@ -1,5 +1,6 @@
 var tls = require('tls');
 var net = require('net');
+var dns = require('dns');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
@@ -108,52 +109,75 @@ var netEvent = function(usrOptions) {
 
     // client specific code
     else {
-        var socket;
+        var socket, pingTimeout, reconnectDelay, socketTimeout;
 
         var connect = function(callback) {
             log('connecting...');
 
-            socket = netType.connect(options.port, options.host, options, function() {
-                clearTimeout(socket.reconnectDelay);
+            var socketCreate = function(port, addr) {
+                socket = netType.connect(port, addr, options, function() {
+                    clearTimeout(reconnectDelay);
 
-                socket._buf = "";
-                log('connected');
+                    socket._buf = "";
+                    log('connected');
 
-                socket.on('data', function(data) {
-                    onData(socket, data, function(event, dataJSON) {
-                        resetPingTimeout();
-                        resetSocketTimeout();
-                        log('got msg: ["' + event + '",' + JSON.stringify(dataJSON) + ']');
-                        self.emit(event, dataJSON);
+                    socket.on('data', function(data) {
+                        onData(socket, data, function(event, dataJSON) {
+                            resetPingTimeout();
+                            resetSocketTimeout();
+                            log('got msg: ["' + event + '",' + JSON.stringify(dataJSON) + ']');
+                            self.emit(event, dataJSON);
+                        });
                     });
+
+                    self.emit('open');
+
+                    // start pinging on inactivity
+                    resetPingTimeout();
                 });
 
-                self.emit('open');
+                socket.once('close', function() {
+                    self.emit('end');
+                    reconnect('(connection closed)');
+                });
+                socket.once('error', function(e) {
+                    self.emit('error', e);
+                    reconnect('(' + e + ')');
+                });
+            };
 
-                // start pinging on inactivity
-                resetPingTimeout();
-            });
+            if(net.isIP(options.host)) {
+                socketCreate(options.port, options.host);
+            } else {
+                dns.resolve(options.host, function(err, addrs) {
+                    if(err)
+                        log('error on dns lookup: ' + err);
+                    else {
+                        socketCreate(options.port, addrs[0]);
+                    }
+                });
+            }
 
             // send ping at inactivity to check connection is up
             var resetPingTimeout = function() {
-                clearTimeout(socket.pingTimeout);
-                socket.pingTimeout = setTimeout(function() {
+                clearTimeout(pingTimeout);
+                pingTimeout = setTimeout(function() {
                     self.send('_ne_ping');
                 }, options.keepalive);
             };
 
             // time connection out after long inactivity
             var resetSocketTimeout = function() {
-                clearTimeout(socket.socketTimeout);
-                socket.socketTimeout = setTimeout(function() {
+                clearTimeout(socketTimeout);
+                socketTimeout = setTimeout(function() {
                     reconnect();
                 }, options.timeout);
             };
 
-            socket.clearTimeouts = function() {
-                clearTimeout(socket.pingTimeout);
-                clearTimeout(socket.reconnectDelay);
-                clearTimeout(socket.socketTimeout);
+            clearTimeouts = function() {
+                clearTimeout(pingTimeout);
+                clearTimeout(reconnectDelay);
+                clearTimeout(socketTimeout);
             };
 
             // start timeout timer
@@ -170,18 +194,9 @@ var netEvent = function(usrOptions) {
                 }
 
                 log('reconnecting in ' + options.reconnectDelay + 'ms... ' + e);
-                socket.clearTimeouts();
-                socket.reconnectDelay = setTimeout(connect, options.reconnectDelay);
+                clearTimeouts();
+                reconnectDelay = setTimeout(connect, options.reconnectDelay);
             };
-
-            socket.once('close', function() {
-                self.emit('end');
-                reconnect('(connection closed)');
-            });
-            socket.once('error', function(e) {
-                self.emit('error', e);
-                reconnect('(' + e + ')');
-            });
         };
 
         connect();
@@ -195,7 +210,7 @@ var netEvent = function(usrOptions) {
         self.close = function() {
             socket.removeAllListeners('close');
             socket.removeAllListeners('error');
-            socket.clearTimeouts();
+            clearTimeouts();
             socket.end();
         };
     }
