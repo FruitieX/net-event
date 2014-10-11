@@ -1,6 +1,5 @@
 var tls = require('tls');
 var net = require('net');
-var dns = require('dns');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
@@ -146,17 +145,7 @@ var netEvent = function(usrOptions) {
                 });
             };
 
-            if(net.isIP(options.host)) {
-                socketCreate(options.port, options.host);
-            } else {
-                dns.resolve(options.host, function(err, addrs) {
-                    if(err)
-                        log('error on dns lookup: ' + err);
-                    else {
-                        socketCreate(options.port, addrs[0]);
-                    }
-                });
-            }
+            socketCreate(options.port, options.host);
 
             // send ping at inactivity to check connection is up
             var resetPingTimeout = function() {
