@@ -169,9 +169,9 @@ var netEvent = function(usrOptions) {
                     socket.destroy();
                 }
 
-                log('reconnecting in ' + options.retryReconnectTimer + 'ms... ' + e);
+                log('reconnecting in ' + options.reconnectDelay + 'ms... ' + e);
                 socket.clearTimeouts();
-                socket.reconnectDelay = setTimeout(connect, options.retryReconnectTimer);
+                socket.reconnectDelay = setTimeout(connect, options.reconnectDelay);
             };
 
             socket.once('close', function() {
