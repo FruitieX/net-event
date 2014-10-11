@@ -24,8 +24,12 @@ var onData = function(socket, data, emitter) {
                 socket._buf = socket._buf.substr(msgLenEnd + len);
 
                 data = JSON.parse(msg);
+
+                if(data[0] === '_ne_ping')
+                    socket.send('_ne_pong');
+
                 // sanity checks
-                if(data[0] !== 'data' && data[0] !== 'end' && data[0] !== 'open')
+                else if(data[0] !== 'data' && data[0] !== 'end' && data[0] !== 'open')
                     emitter(data[0], data[1]);
             // exit and wait for more data
             } else {
@@ -41,7 +45,9 @@ var onData = function(socket, data, emitter) {
 var netEvent = function(usrOptions) {
     // default options
     var options = {
-        retryReconnectTimer: 1000
+        reconnectDelay: 1000,
+        timeout: 5000,
+        keepalive: 1000
     };
 
     for(var key in usrOptions) {
@@ -103,51 +109,78 @@ var netEvent = function(usrOptions) {
     // client specific code
     else {
         var socket;
-        var reconnectTimer;
+        var reconnectDelay, pingTimeout, socketTimeout;
 
         var connect = function(callback) {
+            // send ping at inactivity to check connection is up
+            var resetPingTimeout = function() {
+                clearTimeout(pingTimeout);
+                pingTimeout = setTimeout(function() {
+                    self.send('_ne_ping');
+                }, options.keepalive);
+            };
+
+            // time connection out after long inactivity
+            var resetSocketTimeout = function() {
+                clearTimeout(socketTimeout);
+                socketTimeout = setTimeout(reconnect, options.timeout);
+            };
+
             log('connecting...');
 
-            clearTimeout(reconnectTimer);
-            reconnectTimer = setTimeout(connect, options.retryReconnectTimer);
-
-            if(socket)
-                socket.destroy();
+            // start timeout timer
+            resetSocketTimeout();
 
             socket = netType.connect(options.port, options.host, options, function() {
-                clearTimeout(reconnectTimer);
+                clearTimeout(reconnectDelay);
 
                 socket._buf = "";
                 log('connected');
 
                 socket.on('data', function(data) {
                     onData(socket, data, function(event, dataJSON) {
+                        resetPingTimeout();
+                        resetSocketTimeout();
                         log('got msg: ["' + event + '",' + JSON.stringify(dataJSON) + ']');
                         self.emit(event, dataJSON);
                     });
                 });
 
                 self.emit('open');
+
+                // start pinging on inactivity
+                resetPingTimeout();
             });
 
             var reconnect = function(e) {
                 if(!e)
                     e = '';
+
+                if(socket) {
+                    socket.removeAllListeners('close');
+                    socket.removeAllListeners('timeout');
+                    socket.removeAllListeners('error');
+                    socket.destroy();
+                }
+
                 log('reconnecting in ' + options.retryReconnectTimer + 'ms... ' + e);
-                clearTimeout(reconnectTimer);
-                reconnectTimer = setTimeout(connect, options.retryReconnectTimer);
+                clearTimeout(pingTimeout);
+                clearTimeout(reconnectDelay);
+                reconnectDelay = setTimeout(connect, options.retryReconnectTimer);
             };
 
             socket.once('close', function() {
                 self.emit('end');
                 reconnect('(connection closed)');
             });
+            socket.once('timeout', function() {
+                self.emit('end');
+                reconnect('(connection timed out)');
+            });
             socket.once('error', function(e) {
                 self.emit('error', e);
-                reconnect(e);
+                reconnect('(' + e + ')');
             });
-
-            socket.setKeepAlive(true);
         };
 
         connect();
