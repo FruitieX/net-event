@@ -1,6 +1,6 @@
 {
   "name": "net-event",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "easily extend node net/tls modules with events",
   "main": "net-event.js",
   "scripts": {
